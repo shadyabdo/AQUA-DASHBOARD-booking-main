@@ -1,0 +1,120 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- 1. مساعدات التحقق (Helpers) ---
+    function isSignedIn() { return request.auth != null; }
+    
+    function isAdmin() {
+      return isSignedIn() && 
+             (request.auth.token.email_verified == true) &&
+             (request.auth.token.email.lower() == "otdragoze@gmail.com" || 
+              request.auth.token.email.lower() == "shadyabdowd2020@gmail.com");
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- 2. قواعد البحث الشامل (Collection Group) ---
+    // هذه القواعد ضرورية لعمل الفنادق والغرف في القائمة الجانبية واللوحة الشاملة
+    match /{path=**}/hotels/{hotelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /{path=**}/Hotels/{hotelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /{path=**}/hotel/{hotelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /{path=**}/rooms/{roomId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /{path=**}/Rooms/{roomId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /{path=**}/room/{roomId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    // دعم القراءة الشاملة للمحتوى العام
+    match /{path=**}/articles/{id} { allow read: if true; }
+    match /{path=**}/coupons/{id} { allow read: if true; }
+    match /{path=**}/ads/{id} { allow read: if true; }
+
+    // --- 3. قاعدة اختبار الاتصال ---
+    match /_connection_test/{docId} {
+      allow read: if true;
+    }
+
+    // --- 4. قواعد المدن والفنادق والغرف (المسار الهيكلي) ---
+    match /cities/{cityId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /hotels/{hotelId} {
+        allow read: if true;
+        allow write: if isAdmin();
+
+        match /rooms/{roomId} {
+          allow read: if true;
+          allow write: if isAdmin();
+        }
+      }
+    }
+
+    // --- 4. قواعد الحجوزات (السرية والأمان) ---
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && (request.auth.token.email_verified == true)
+                    && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // --- 5. ملفات المستخدمين ---
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- 6. المقالات والكوبونات والإعلانات ---
+    match /articles/{articleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /Articles/{articleId} {
+      allow read: if true;
+      allow create: if isAdmin() 
+                    && request.resource.data.keys().hasAll(['عنوان المقالة', 'محتوى المقالة'])
+                    && request.resource.data['محتوى المقالة'] is string
+                    && (!request.resource.data.keys().hasAny(['التصنيفات']) || request.resource.data['التصنيفات'] is list);
+      allow update: if isAdmin()
+                    && (!request.resource.data.keys().hasAny(['محتوى المقالة']) || request.resource.data['محتوى المقالة'] is string)
+                    && (!request.resource.data.keys().hasAny(['التصنيفات']) || request.resource.data['التصنيفات'] is list);
+      allow delete: if isAdmin();
+    }
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create: if isAdmin() 
+                    && request.resource.data.keys().hasAll(['code', 'discountPercentage', 'isActive']);
+      allow update: if isAdmin()
+                    && request.resource.data.keys().hasAll(['code', 'discountPercentage', 'isActive']);
+      allow delete: if isAdmin();
+    }
+    match /ads/{adId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // --- 7. القاعدة العامة (إغلاق كل شيء آخر) ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

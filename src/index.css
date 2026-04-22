@@ -1,0 +1,163 @@
+@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Almarai", sans-serif;
+  --color-background: var(--background);
+  --color-sidebar: var(--sidebar);
+  --color-primary: var(--primary); /* Now dynamic */
+  --color-accent: #6366f1; /* Indigo */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-destructive: #ef4444;
+  --color-border: #e2e8f0;
+  --color-text-main: #1e293b;
+  --color-text-muted: #64748b;
+  --color-card: #ffffff;
+  --color-muted: #f8fafc;
+  
+  --radius-2xl: 16px;
+  --radius-xl: 12px;
+  --radius-lg: 10px;
+  --radius-md: 8px;
+  --radius-sm: 4px;
+  
+  --shadow-premium: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-glass: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+  --animate-gradient: gradient-shift 8s ease infinite;
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+}
+
+:root {
+  --primary: #3b82f6;
+  --background: #f8fafc;
+  --sidebar: #ffffff;
+  --border: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --card: #ffffff;
+  --muted: #f1f5f9;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text-main antialiased transition-colors duration-500 selection:bg-primary/10 selection:text-primary;
+    font-family: "Almarai", sans-serif;
+    direction: rtl;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/70 backdrop-blur-xl border border-white/20 shadow-glass;
+  }
+
+  .premium-card {
+    @apply bg-card border border-border rounded-xl shadow-sm transition-all duration-200 hover:shadow-md;
+  }
+  
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-text-muted hover:bg-muted hover:text-primary;
+  }
+  
+  .sidebar-item-active {
+    @apply bg-primary/10 text-primary font-bold;
+  }
+  
+  .table-premium {
+    @apply w-full text-right;
+  }
+
+  .table-premium th {
+    @apply text-right px-6 py-4 bg-muted text-text-muted font-bold text-xs uppercase tracking-wider border-b border-border;
+  }
+  
+  .table-premium td {
+    @apply px-6 py-4 border-b border-border text-sm text-text-main align-middle;
+  }
+
+  .stat-card-v2 {
+    @apply bg-card border border-border rounded-xl p-6 transition-all duration-200 hover:border-primary/40;
+  }
+  
+  .stat-icon-glow {
+    @apply flex items-center justify-center w-12 h-12 rounded-lg mb-4 bg-primary/5 text-primary transition-all duration-200;
+  }
+  
+  .btn-premium {
+    @apply inline-flex items-center justify-center bg-primary text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 hover:bg-primary/90 active:scale-[0.98];
+  }
+
+  .badge-premium {
+    @apply px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border bg-muted/50;
+  }
+
+  .gradient-text {
+    @apply text-text-main font-bold;
+  }
+
+  .premium-input {
+    @apply h-11 text-sm rounded-lg border-border focus:ring-1 focus:ring-primary focus:border-primary transition-all;
+  }
+
+  .premium-blur {
+    @apply backdrop-blur-2xl bg-card/60 border border-white/20;
+  }
+
+  .glow-border {
+    @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-primary/20 before:to-accent/20 before:rounded-[inherit] before:-z-10 bg-clip-padding;
+  }
+
+  .card-hover-effect {
+    @apply hover:border-primary/30 hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] transition-all duration-500;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+}
+
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ===== SweetAlert2 RTL Overrides & Styling ===== */
+.swal2-container {
+  font-family: var(--font-sans) !important;
+}
+
+.swal2-container,
+.swal2-popup,
+.swal2-modal {
+  direction: rtl !important;
+  text-align: center !important;
+}
+
+.swal2-title,
+.swal2-html-container,
+.swal2-content {
+  text-align: center !important;
+  direction: rtl !important;
+}
+
+.swal2-actions {
+  direction: rtl !important;
+}
+
+.swal2-icon {
+  margin-right: auto !important;
+  margin-left: auto !important;
+}
+
+.swal2-actions {
+  gap: 0.75rem;
+  width: 100%;
+}
+

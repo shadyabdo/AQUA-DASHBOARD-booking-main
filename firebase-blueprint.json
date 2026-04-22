@@ -1,0 +1,145 @@
+{
+  "entities": {
+    "City": {
+      "title": "City",
+      "description": "A city representing a destination for hotel bookings",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the city" },
+        "country": { "type": "string", "description": "The country of the city" },
+        "description": { "type": "string", "description": "Short description of the city" },
+        "city_img": { "type": "string", "format": "uri", "description": "URL to the city's main image" },
+        "isFeatured": { "type": "boolean", "description": "Whether the city is featured" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name"]
+    },
+    "Hotel": {
+      "title": "Hotel",
+      "description": "A hotel located within a city",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "cityId": { "type": "string" },
+        "Hotel_img": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "المرافق": { "type": "array", "items": { "type": "string" } },
+        "الإطلالة": { "type": "string" },
+        "freeCancellation": { "type": "boolean" }
+      },
+      "required": ["name", "cityId"]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "A room within a hotel",
+      "type": "object",
+      "properties": {
+        "Room_name": { "type": "string" },
+        "Room_img": { "type": "array", "items": { "type": "string", "format": "uri" } },
+        "السعر": { "type": "string", "description": "Price per night" },
+        "الإطلالة": { "type": "string", "description": "Room view" },
+        "المرافق": { "type": "array", "items": { "type": "string" }, "description": "Room facilities" },
+        "المميزات": { "type": "array", "items": { "type": "string" }, "description": "Room features" },
+        "hotelId": { "type": "string" },
+        "cityId": { "type": "string" }
+      },
+      "required": ["Room_name", "السعر"]
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "A hotel room booking made by a user",
+      "type": "object",
+      "properties": {
+        "hotelId": { "type": "string" },
+        "roomId": { "type": "string" },
+        "userId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "checkIn": { "type": "string", "format": "date" },
+        "checkOut": { "type": "string", "format": "date" },
+        "totalPrice": { "type": "number" }
+      },
+      "required": ["hotelId", "roomId", "userId", "status", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "A user's profile information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["email"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "A blog post or article content",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "A discount coupon for bookings",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "discount": { "type": "number" },
+        "expiryDate": { "type": "string", "format": "date" }
+      },
+      "required": ["code", "discount"]
+    },
+    "Ad": {
+      "title": "Ad",
+      "description": "A promotional advertisement banner",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "link": { "type": "string", "format": "uri" }
+      },
+      "required": ["title", "imageUrl"]
+    }
+  },
+  "firestore": {
+    "/cities": {
+      "schema": "City",
+      "description": "Collection of available cities"
+    },
+    "/cities/{cityId}/hotels": {
+      "schema": "Hotel",
+      "description": "Hotels within a specific city"
+    },
+    "/cities/{cityId}/hotels/{hotelId}/rooms": {
+      "schema": "Room",
+      "description": "Rooms available in a specific hotel"
+    },
+    "/bookings": {
+      "schema": "Booking",
+      "description": "All hotel bookings"
+    },
+    "/users": {
+      "schema": "UserProfile",
+      "description": "User profile documents"
+    },
+    "/articles": {
+      "schema": "Article",
+      "description": "Blog and news articles"
+    },
+    "/coupons": {
+      "schema": "Coupon",
+      "description": "Discount coupons"
+    },
+    "/ads": {
+      "schema": "Ad",
+      "description": "Promotion advertisements"
+    }
+  }
+}

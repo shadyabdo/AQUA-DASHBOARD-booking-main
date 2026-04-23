@@ -655,7 +655,7 @@ export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onMa
                 <TableHead>المدينة</TableHead>
                 <TableHead>التقييم</TableHead>
                 <TableHead>الصور</TableHead>
-                <TableHead className="text-left">الإجراءات</TableHead>
+                <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -718,8 +718,8 @@ export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onMa
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className="text-left">
-                    <div className="flex items-center justify-end gap-2">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-start gap-2">
                       {onManageRooms && (
                         <Button variant="outline" size="sm" onClick={() => onManageRooms(hotel.id)} className="h-8 px-3 rounded-lg text-[10px] font-bold gap-2">
                           <Bed className="h-3 w-3" />

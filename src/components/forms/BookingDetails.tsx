@@ -14,6 +14,25 @@ interface BookingDetailsProps {
 }
 
 export const BookingDetails: React.FC<BookingDetailsProps> = ({ booking, onClose }) => {
+  const formatBookingDate = (createdAt: any) => {
+    if (!createdAt) return { date: '-', time: '' };
+    try {
+      const dateObj = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+      if (isNaN(dateObj.getTime())) return { date: '-', time: '' };
+      return {
+        date: dateObj.toLocaleDateString('ar-EG', { dateStyle: 'long' }),
+        time: dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+      };
+    } catch (e) {
+      return { date: '-', time: '' };
+    }
+  };
+
+  const bookingDate = formatBookingDate(booking.createdAt);
+  const displayName = booking.guestName || booking.userName || 'مستخدم مجهول';
+  const displayEmail = booking.guestEmail || booking.userEmail || '-';
+  const displayPrice = booking.price || booking.roomPrice || 0;
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed': 
@@ -45,15 +64,15 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({ booking, onClose
       <div className="flex items-center gap-6 p-6 bg-muted/20 rounded-[2rem] border border-border/40 flex-row-reverse">
         <div className="w-20 h-20 rounded-2xl bg-muted border-4 border-card shadow-xl overflow-hidden ring-4 ring-primary/5">
           <img 
-            src={`https://api.dicebear.com/7.x/initials/svg?seed=${booking.userName || 'U'}`} 
+            src={`https://api.dicebear.com/7.x/initials/svg?seed=${displayName}`} 
             alt="User"
             className="w-full h-full object-cover"
           />
         </div>
         <div className="space-y-1.5 flex-1">
-          <h3 className="text-2xl font-black text-text-main tracking-tight">{booking.userName || 'مستخدم مجهول'}</h3>
+          <h3 className="text-2xl font-black text-text-main tracking-tight">{displayName}</h3>
           <div className="flex flex-col items-end gap-1">
-            <span className="text-xs font-bold text-primary select-all">{booking.userEmail}</span>
+            <span className="text-xs font-bold text-primary select-all">{displayEmail}</span>
             <div className="flex items-center gap-3 justify-end">
               <span className="text-[10px] text-text-muted font-bold flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> سجل دخول المستخدم
@@ -72,8 +91,8 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({ booking, onClose
               <div className="flex items-center gap-3 flex-row-reverse">
                 <HotelIcon className="h-5 w-5 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                 <div className="text-right">
-                  <p className="font-black text-sm text-text-main group-hover:text-primary transition-colors">{booking.hotelName}</p>
-                  <p className="text-[11px] text-text-muted font-bold mt-0.5">{booking.roomTitle}</p>
+                  <p className="font-black text-sm text-text-main group-hover:text-primary transition-colors">{booking.hotelName || booking.hotelId}</p>
+                  <p className="text-[11px] text-text-muted font-bold mt-0.5">{booking.roomTitle || booking.roomId}</p>
                 </div>
               </div>
             </div>
@@ -85,7 +104,7 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({ booking, onClose
               <DollarSign className="absolute -left-4 -bottom-4 h-24 w-24 text-success/5 transform rotate-12 group-hover:scale-110 transition-transform" />
               <div className="relative z-10 text-right">
                 <p className="text-[10px] font-bold text-success/60 uppercase tracking-widest mb-1">صافي المبلغ</p>
-                <p className="text-3xl font-black text-success tracking-tighter">${booking.roomPrice}</p>
+                <p className="text-3xl font-black text-success tracking-tighter">${displayPrice}</p>
               </div>
               <CreditCard className="h-10 w-10 text-success/20 group-hover:text-success transition-colors" />
             </div>
@@ -102,13 +121,9 @@ export const BookingDetails: React.FC<BookingDetailsProps> = ({ booking, onClose
                   <span className="text-text-muted font-bold uppercase tracking-widest text-[10px]">تاريخ التسجيل:</span>
                 </div>
                 <span className="font-black text-text-main text-sm">
-                  {booking.createdAt ? (
-                    <>
-                      {new Date(booking.createdAt).toLocaleDateString('ar-EG', { dateStyle: 'long' })}
-                      <span className="mx-2 text-text-muted/30">|</span>
-                      {new Date(booking.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
-                    </>
-                  ) : '-'}
+                  {bookingDate.date}
+                  <span className="mx-2 text-text-muted/30">|</span>
+                  {bookingDate.time}
                 </span>
               </div>
             </div>

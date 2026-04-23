@@ -40,11 +40,14 @@ export interface Booking {
   hotelId: string;
   roomId: string;
   userId: string;
-  userName?: string;
-  userEmail?: string;
+  userName?: string; // Legacy
+  userEmail?: string; // Legacy
+  guestName?: string;
+  guestEmail?: string;
   hotelName?: string;
   roomTitle?: string;
-  roomPrice?: number;
+  roomPrice?: number; // Legacy
+  price?: number;
   status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: any;
 }

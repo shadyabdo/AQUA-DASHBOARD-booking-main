@@ -1,58 +1,85 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // --- 1. مساعدات التحقق (Helpers) ---
-    function isSignedIn() { return request.auth != null; }
-    
-    function isAdmin() {
-      return isSignedIn() && 
-             (request.auth.token.email_verified == true) &&
-             (request.auth.token.email.lower() == "otdragoze@gmail.com" || 
-              request.auth.token.email.lower() == "shadyabdowd2020@gmail.com");
+
+    // =========================
+    // 1. Helpers
+    // =========================
+    function isSignedIn() {
+      return request.auth != null;
     }
-    
+
+    function isAdmin() {
+      return isSignedIn() &&
+             request.auth.token.email_verified == true &&
+             (
+               request.auth.token.email.lower() == "otdragoze@gmail.com" ||
+               request.auth.token.email.lower() == "shadyabdowd2020@gmail.com" ||
+               request.auth.token.email.lower() == "gidehotel@gmail.com" ||
+               request.auth.token.email.lower() == "abdo20004044@gmail.com"
+               );
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- 2. قواعد البحث الشامل (Collection Group) ---
-    // هذه القواعد ضرورية لعمل الفنادق والغرف في القائمة الجانبية واللوحة الشاملة
+    // =========================
+    // 2. Global Collection Group دعم
+    // =========================
+
     match /{path=**}/hotels/{hotelId} {
       allow read: if true;
+      allow update: if isSignedIn(); // rating فقط (يفضل تقييدها لاحقًا)
       allow write: if isAdmin();
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin() || isOwner(resource.data.userId);
+      }
     }
-    match /{path=**}/Hotels/{hotelId} {
+
+    match /{path=**}/Hotels/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /{path=**}/hotel/{hotelId} {
+
+    match /{path=**}/hotel/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /{path=**}/rooms/{roomId} {
+
+    match /{path=**}/rooms/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /{path=**}/Rooms/{roomId} {
+
+    match /{path=**}/Rooms/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /{path=**}/room/{roomId} {
+
+    match /{path=**}/room/{id} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    // دعم القراءة الشاملة للمحتوى العام
+
+    // محتوى عام
     match /{path=**}/articles/{id} { allow read: if true; }
     match /{path=**}/coupons/{id} { allow read: if true; }
     match /{path=**}/ads/{id} { allow read: if true; }
 
-    // --- 3. قاعدة اختبار الاتصال ---
+    // =========================
+    // 3. Connection Test
+    // =========================
     match /_connection_test/{docId} {
       allow read: if true;
     }
 
-    // --- 4. قواعد المدن والفنادق والغرف (المسار الهيكلي) ---
+    // =========================
+    // 4. Structured Data (cities)
+    // =========================
     match /cities/{cityId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -68,51 +95,106 @@ service cloud.firestore {
       }
     }
 
-    // --- 4. قواعد الحجوزات (السرية والأمان) ---
+    // =========================
+    // 5. Bookings
+    // =========================
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isSignedIn() && (request.auth.token.email_verified == true)
+      allow read: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+
+      allow create: if isSignedIn()
+                    && request.auth.token.email_verified == true
                     && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow update: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
       allow delete: if isAdmin();
     }
 
-    // --- 5. ملفات المستخدمين ---
+    // =========================
+    // 6. Users
+    // =========================
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow write: if isOwner(userId);
+      allow create: if isOwner(userId);
+
+      match /transactions/{transactionId} {
+        allow read, create, list: if isOwner(userId);
+      }
+
+      match /favorites/{favoriteId} {
+        allow read, write, create, list: if isOwner(userId);
+      }
     }
 
-    // --- 6. المقالات والكوبونات والإعلانات ---
+    // =========================
+    // 7. Articles + Comments + Feedback
+    // =========================
     match /articles/{articleId} {
       allow read: if true;
       allow write: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin() || isOwner(resource.data.userId);
+      }
+
+      match /feedback/{feedbackId} {
+        allow read, write: if true;
+      }
     }
+
     match /Articles/{articleId} {
       allow read: if true;
-      allow create: if isAdmin() 
-                    && request.resource.data.keys().hasAll(['عنوان المقالة', 'محتوى المقالة'])
-                    && request.resource.data['محتوى المقالة'] is string
-                    && (!request.resource.data.keys().hasAny(['التصنيفات']) || request.resource.data['التصنيفات'] is list);
+
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasAll(['عنوان المقالة', 'محتوى المقالة'])
+        && request.resource.data['محتوى المقالة'] is string
+        && (!request.resource.data.keys().hasAny(['التصنيفات']) ||
+            request.resource.data['التصنيفات'] is list);
+
       allow update: if isAdmin()
-                    && (!request.resource.data.keys().hasAny(['محتوى المقالة']) || request.resource.data['محتوى المقالة'] is string)
-                    && (!request.resource.data.keys().hasAny(['التصنيفات']) || request.resource.data['التصنيفات'] is list);
+        && (!request.resource.data.keys().hasAny(['محتوى المقالة']) ||
+            request.resource.data['محتوى المقالة'] is string)
+        && (!request.resource.data.keys().hasAny(['التصنيفات']) ||
+            request.resource.data['التصنيفات'] is list);
+
       allow delete: if isAdmin();
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin() || isOwner(resource.data.userId);
+      }
+
+      match /feedback/{feedbackId} {
+        allow read, write: if true;
+      }
     }
+
+    // =========================
+    // 8. Coupons
+    // =========================
     match /coupons/{couponId} {
       allow read: if true;
-      allow create: if isAdmin() 
-                    && request.resource.data.keys().hasAll(['code', 'discountPercentage', 'isActive']);
-      allow update: if isAdmin()
-                    && request.resource.data.keys().hasAll(['code', 'discountPercentage', 'isActive']);
+
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasAll(['code', 'discountPercentage', 'isActive']);
+
       allow delete: if isAdmin();
     }
+
+    // =========================
+    // 9. Ads
+    // =========================
     match /ads/{adId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // --- 7. القاعدة العامة (إغلاق كل شيء آخر) ---
+    // =========================
+    // 10. Fallback (إغلاق كامل)
+    // =========================
     match /{document=**} {
       allow read, write: if false;
     }

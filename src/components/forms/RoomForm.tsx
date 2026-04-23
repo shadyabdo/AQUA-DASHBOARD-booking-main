@@ -33,18 +33,23 @@ export const RoomForm: React.FC<RoomFormProps> = ({
     السعر: initialData?.السعر || '',
     الإطلالة: initialData?.الإطلالة || '',
     المرافق: initialData?.المرافق || [''],
-    imageUrls: (initialData?.Room_img && initialData.Room_img.length > 0) ? initialData.Room_img : [''],
     cityId: initialData?.cityId || '',
     hotelId: initialData?.hotelId || '',
     rating: initialData?.rating ?? 0,
     reviewsCount: initialData?.reviewsCount || 0,
     isSmokingAllowed: initialData?.isSmokingAllowed ?? false,
     size: initialData?.size || '',
-    bed: initialData?.bed || ''
+    bed: initialData?.bed || '',
+    imageUrls: []
   });
   
   const [hoverRating, setHoverRating] = useState(0);
+  const [uploadedImages, setUploadedImages] = useState<string[]>(
+    isEdit ? (initialData?.Room_img || []) : []
+  );
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
 
   const [dynamicHotels, setDynamicHotels] = useState<Hotel[]>([]);
@@ -75,11 +80,37 @@ export const RoomForm: React.FC<RoomFormProps> = ({
 
   const displayHotels = dynamicHotels.length > 0 ? dynamicHotels : hotels.filter(h => h.cityId === formData.cityId);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const uploadPromises = Array.from(files).map(async (file: File) => {
+      const storageRef = ref(storage, `rooms/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      return getDownloadURL(storageRef);
+    });
+
+    try {
+      const urls = await Promise.all(uploadPromises);
+      setUploadedImages(prev => [...prev, ...urls]);
+      toast.success(`تم رفع ${urls.length} صور`);
+    } catch (error) {
+      console.error(error);
+      toast.error('فشل في رفع الصور');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const allImages = formData.imageUrls.filter(url => url.trim() !== '');
+      const allImages = [
+        ...uploadedImages,
+        ...formData.imageUrls.filter(url => url.trim() !== '')
+      ];
       
       const { imageUrls, ...submitData } = formData;
       
@@ -362,40 +393,85 @@ export const RoomForm: React.FC<RoomFormProps> = ({
       <div className="space-y-8 pt-8 border-t border-border/40">
         <div className="flex items-center justify-between flex-row-reverse">
           <div className="space-y-1 text-right">
-            <Label className="text-[10px] font-black uppercase tracking-widest text-text-muted">الأصول المرئية (روابط خارجية)</Label>
-            <p className="text-[9px] text-text-muted font-bold">أضف روابط مباشرة للصور المستضافة على خوادم خارجية</p>
+            <Label className="text-[10px] font-black uppercase tracking-widest text-text-muted">الأصول المرئية</Label>
+            <p className="text-[9px] text-text-muted font-bold">رفع صور عالية الدقة أو إضافة روابط خارجية</p>
           </div>
-          <Button type="button" variant="outline" onClick={() => addDynamicField('imageUrls')} className="h-11 px-6 text-[10px] font-black border-dashed rounded-xl gap-2">
-            <Plus className="h-4 w-4" /> إضافة رابط صورة
-          </Button>
+          <div className="flex items-center gap-3">
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              multiple 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleImageUpload} 
+            />
+            <Button 
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="btn-premium px-6 h-12 rounded-xl flex items-center gap-2 text-[10px] font-black shadow-lg shadow-primary/20"
+            >
+              <Plus className="h-4 w-4" /> حَمِّل من الجهاز
+            </Button>
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => addDynamicField('imageUrls')}
+              className="px-6 h-12 rounded-xl flex items-center gap-2 text-[10px] font-black border-2 border-primary/20 text-primary hover:bg-primary/5 transition-all"
+            >
+              <ImageIcon className="h-4 w-4" /> أضف رابط صورة
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5 flex-row-reverse">
           <AnimatePresence>
-            {formData.imageUrls.map((url, index) => (
-              <motion.div key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-muted/30 border border-border/40">
-                <div className="flex-grow space-y-2">
-                  <Label className="text-[10px] font-bold text-text-muted">رابط الصورة {index + 1}</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      value={url} 
-                      onChange={(e) => updateDynamicField('imageUrls', index, e.target.value)} 
-                      className="premium-input h-12 rounded-xl px-4 font-bold text-left ltr"
-                      placeholder="https://example.com/image.jpg"
-                    />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeDynamicField('imageUrls', index)} className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl">
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                {url.trim() !== '' && (
-                  <div className="w-full sm:w-32 aspect-square rounded-xl overflow-hidden border-2 border-border/40 shrink-0">
-                    <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://placehold.co/400x400?text=Invalid+URL')} />
-                  </div>
-                )}
+            {uploadedImages.map((url, index) => (
+              <motion.div key={`up-${index}`} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-border/40 group shadow-lg">
+                <img src={url} alt="Room" className="w-full h-full object-cover transition-transform group-hover:scale-110" referrerPolicy="no-referrer" />
+                <button type="button" onClick={() => setUploadedImages(prev => prev.filter((_, i) => i !== index))} className="absolute inset-0 bg-destructive/90 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm">
+                  <Trash className="h-6 w-6" />
+                </button>
               </motion.div>
             ))}
           </AnimatePresence>
+        </div>
+
+        <div className="space-y-6 pt-6">
+          {formData.imageUrls.length > 0 && (
+            <>
+              <div className="flex items-center justify-between flex-row-reverse">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-text-muted">روابط الصور الخارجية المضافة</Label>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <AnimatePresence>
+                  {formData.imageUrls.map((url, index) => (
+                    <motion.div key={`link-${index}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-muted/30 border border-border/40">
+                      <div className="flex-grow space-y-2">
+                        <div className="flex gap-2">
+                          <Input 
+                            value={url} 
+                            onChange={(e) => updateDynamicField('imageUrls', index, e.target.value)} 
+                            className="premium-input h-12 rounded-xl px-4 font-bold text-left ltr"
+                            placeholder="https://example.com/image.jpg"
+                          />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removeDynamicField('imageUrls', index)} className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl">
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {url.trim() !== '' && (
+                        <div className="w-full sm:w-24 aspect-square rounded-xl overflow-hidden border-2 border-border/40 shrink-0">
+                          <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://placehold.co/400x400?text=Invalid+URL')} />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

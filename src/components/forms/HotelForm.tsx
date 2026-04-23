@@ -31,7 +31,7 @@ export const HotelForm: React.FC<HotelFormProps> = ({
     name: initialData?.name || '',
     description: initialData?.description || '',
     cityId: initialData?.cityId || '',
-    imageUrls: [''],
+    imageUrls: [],
     المرافق: initialData?.المرافق || [''],
     الإطلالة: initialData?.الإطلالة || '',
     freeCancellation: initialData?.freeCancellation || false,
@@ -46,6 +46,7 @@ export const HotelForm: React.FC<HotelFormProps> = ({
   );
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -101,6 +102,20 @@ export const HotelForm: React.FC<HotelFormProps> = ({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const updateImageUrl = (index: number, value: string) => {
+    const newUrls = [...formData.imageUrls];
+    newUrls[index] = value;
+    setFormData({ ...formData, imageUrls: newUrls });
+  };
+
+  const addImageUrlField = () => {
+    setFormData({ ...formData, imageUrls: [...formData.imageUrls, ''] });
+  };
+
+  const removeImageUrlField = (index: number) => {
+    setFormData({ ...formData, imageUrls: formData.imageUrls.filter((_, i) => i !== index) });
   };
 
   return (
@@ -326,10 +341,30 @@ export const HotelForm: React.FC<HotelFormProps> = ({
             <p className="text-[9px] text-text-muted font-bold">رفع صور عالية الدقة أو إضافة روابط CDN مباشرة</p>
           </div>
           <div className="flex items-center gap-3">
-            <label className="btn-premium px-6 py-3 rounded-xl cursor-pointer flex items-center gap-2 text-[10px] font-black shadow-lg shadow-primary/20">
-              <Plus className="h-4 w-4" /> حَمِّل صور جديدة
-              <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-            </label>
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              multiple 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleImageUpload} 
+            />
+            <Button 
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="btn-premium px-6 h-12 rounded-xl flex items-center gap-2 text-[10px] font-black shadow-lg shadow-primary/20"
+            >
+              <Plus className="h-4 w-4" /> حَمِّل من الجهاز
+            </Button>
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={addImageUrlField}
+              className="px-6 h-12 rounded-xl flex items-center gap-2 text-[10px] font-black border-2 border-primary/20 text-primary hover:bg-primary/5 transition-all"
+            >
+              <ImageIcon className="h-4 w-4" /> أضف رابط صورة
+            </Button>
           </div>
         </div>
 
@@ -344,6 +379,43 @@ export const HotelForm: React.FC<HotelFormProps> = ({
               </motion.div>
             ))}
           </AnimatePresence>
+        </div>
+
+        <div className="space-y-6 pt-6">
+          {formData.imageUrls.length > 0 && (
+            <>
+              <div className="flex items-center justify-between flex-row-reverse">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-text-muted">روابط الصور الخارجية المضافة</Label>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <AnimatePresence>
+                  {formData.imageUrls.map((url, index) => (
+                    <motion.div key={`link-${index}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col sm:flex-row gap-4 p-4 rounded-2xl bg-muted/30 border border-border/40">
+                      <div className="flex-grow space-y-2">
+                        <div className="flex gap-2">
+                          <Input 
+                            value={url} 
+                            onChange={(e) => updateImageUrl(index, e.target.value)} 
+                            className="premium-input h-12 rounded-xl px-4 font-bold text-left ltr"
+                            placeholder="https://example.com/image.jpg"
+                          />
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrlField(index)} className="h-12 w-12 text-destructive hover:bg-destructive/10 rounded-xl">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      {url.trim() !== '' && (
+                        <div className="w-full sm:w-24 aspect-square rounded-xl overflow-hidden border-2 border-border/40 shrink-0">
+                          <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://placehold.co/400x400?text=Invalid+URL')} />
+                        </div>
+                      )}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

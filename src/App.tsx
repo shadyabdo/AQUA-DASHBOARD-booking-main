@@ -639,7 +639,7 @@ export default function App() {
     }
 
     // Only run stats listeners for admins to avoid permission errors for regular users
-    const userIsAdmin = ['otdragoze@gmail.com', 'shadyabdowd2020@gmail.com', 'gidehotel@gmail.com'].includes(user.email || '');
+    const userIsAdmin = ['otdragoze@gmail.com', 'shadyabdowd2020@gmail.com', 'gidehotel@gmail.com', 'abdo20004044@gmail.com'].includes(user.email || '');
     
     if (!userIsAdmin) return;
 
@@ -653,44 +653,45 @@ export default function App() {
 
     // 3. Stats Fetching (One-time for collectionGroups to avoid SDK crashes)
     const loadStats = async () => {
-      // Top-level collections are safe for onSnapshot usually, but for consistency let's use getDocs as firestoreGetDocs for counts if needed
-      // Actually let's keep onSnapshot for top-level if they work
-      
-      // 2. Fetch Stats
-      try {
-        const [
-          bookingsSnap,
-          citiesSnap,
-          articlesSnap,
-          couponsSnap
-        ] = await Promise.all([
-          firestoreGetDocs(collection(db, 'bookings')),
-          firestoreGetDocs(collection(db, 'cities')),
-          firestoreGetDocs(collection(db, 'Articles')),
-          firestoreGetDocs(collection(db, 'coupons'))
-        ]);
+      const fetchCount = async (collPath: string) => {
+        try {
+          const snap = await firestoreGetDocs(collection(db, collPath));
+          return snap.size;
+        } catch (err) {
+          console.warn(`Stats: failed to fetch count for ${collPath}`, err);
+          return 0;
+        }
+      };
 
-        setStats(prev => ({
-          ...prev,
-          bookings: bookingsSnap.size,
-          cities: citiesSnap.size,
-          articles: articlesSnap.size,
-          coupons: couponsSnap.size
-        }));
-      } catch (err) {
-        console.warn('Stats: standard collections fetch failed', err);
-      }
+      const fetchGroupCount = async (groupName: string) => {
+        try {
+          const snap = await firestoreGetDocs(query(collectionGroup(db, groupName)));
+          return snap.size;
+        } catch (err) {
+          console.warn(`Stats: failed to fetch group count for ${groupName}`, err);
+          return null;
+        }
+      };
 
-      // Hotels & Rooms (The troublemakers)
-      try {
-        const [hotelsSnap, roomsSnap] = await Promise.all([
-          firestoreGetDocs(query(collectionGroup(db, 'hotels'))),
-          firestoreGetDocs(query(collectionGroup(db, 'rooms')))
-        ]);
-        setStats(prev => ({ ...prev, hotels: hotelsSnap.size, rooms: roomsSnap.size }));
-      } catch (e) {
-        console.warn('Stats: collectionGroup fetch failed, using count fallback');
-        // Fallback: fetch cities then hotels for each city (expensive but safe)
+      const [bookings, cities, articles, coupons] = await Promise.all([
+        fetchCount('bookings'),
+        fetchCount('cities'),
+        fetchCount('Articles'),
+        fetchCount('coupons')
+      ]);
+
+      setStats(prev => ({
+        ...prev,
+        bookings,
+        cities,
+        articles,
+        coupons
+      }));
+
+      let hotelsCount = await fetchGroupCount('hotels');
+      let roomsCount = await fetchGroupCount('rooms');
+
+      if (hotelsCount === null || roomsCount === null) {
         try {
           const cSnap = await firestoreGetDocs(collection(db, 'cities'));
           let hCount = 0;
@@ -703,15 +704,20 @@ export default function App() {
               rCount += rs.size;
             }
           }
-          setStats(prev => ({ ...prev, hotels: hCount, rooms: rCount }));
+          if (hotelsCount === null) hotelsCount = hCount;
+          if (roomsCount === null) roomsCount = rCount;
         } catch (fallbackErr) {
           console.error('Stats: fallback failed', fallbackErr);
         }
       }
 
-      return () => {
-        // No-op cleanup
-      };
+      setStats(prev => ({ 
+        ...prev, 
+        hotels: hotelsCount ?? prev.hotels, 
+        rooms: roomsCount ?? prev.rooms 
+      }));
+
+      return () => {};
     };
 
     const cleanupPromise = loadStats();

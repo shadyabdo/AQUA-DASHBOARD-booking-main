@@ -340,7 +340,7 @@ export const GlobalRoomView: React.FC = () => {
                 <TableHead className="w-[220px]">مواصفات الوحدة</TableHead>
                 <TableHead className="w-[200px]">الوسائط المرئية</TableHead>
                 <TableHead className="w-[150px]">التقييم</TableHead>
-                <TableHead className="text-left">الإجراءات</TableHead>
+                <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -455,8 +455,8 @@ export const GlobalRoomView: React.FC = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-left">
-                      <div className="flex items-center justify-end gap-2">
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-start gap-2">
                         <Button 
                           variant="ghost" 
                           size="icon" 

@@ -115,6 +115,20 @@ export const BookingManager: React.FC<BookingManagerProps> = ({ isDashboard }) =
     }
   };
 
+  const formatBookingDate = (createdAt: any) => {
+    if (!createdAt) return { date: '-', time: '' };
+    try {
+      const dateObj = createdAt.toDate ? createdAt.toDate() : new Date(createdAt);
+      if (isNaN(dateObj.getTime())) return { date: '-', time: '' };
+      return {
+        date: dateObj.toLocaleDateString('ar-EG'),
+        time: dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+      };
+    } catch (e) {
+      return { date: '-', time: '' };
+    }
+  };
+
   return (
     <div className={cn(
       "w-full",
@@ -142,87 +156,94 @@ export const BookingManager: React.FC<BookingManagerProps> = ({ isDashboard }) =
               <TableHead>القيمة</TableHead>
               <TableHead>التاريخ والوقت</TableHead>
               <TableHead>الحالة</TableHead>
-              {!isDashboard && <TableHead className="text-left">الإجراءات</TableHead>}
+              {!isDashboard && <TableHead className="text-right">الإجراءات</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {bookings.map((booking) => (
-              <TableRow 
-                key={booking.id}
-                className="group cursor-pointer"
-                onClick={() => openBookingDetailsSwal(booking)}
-              >
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-muted border border-border overflow-hidden">
-                      <img 
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${booking.userName || 'U'}`} 
-                        alt="User"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-bold text-text-main text-sm">
-                        {booking.userName || 'ضيف'}
-                      </span>
-                      <span className="text-[10px] text-text-muted font-medium">#{booking.id?.substring(0, 8)}</span>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="text-[10px] font-bold text-text-muted select-all">
-                    {booking.userEmail || '-'}
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-text-main text-xs">{booking.hotelName || booking.hotelId}</span>
-                    <span className="text-[10px] text-text-muted font-medium">{booking.roomTitle || booking.roomId}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className="font-black text-success text-sm">${booking.roomPrice || 0}</span>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-xs text-text-main">
-                      {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString('ar-EG') : '-'}
-                    </span>
-                    <span className="text-[9px] text-text-muted font-medium">
-                      {booking.createdAt ? new Date(booking.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                {!isDashboard && (
-                  <TableCell className="text-left" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-2">
-                      <Select 
-                        onValueChange={(v) => updateStatus(booking.id, v)} 
-                        defaultValue={booking.status}
-                      >
-                        <SelectTrigger className="w-[120px] h-8 text-[10px] font-bold rounded-lg bg-card">
-                          <SelectValue placeholder="الحالة" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending" className="text-xs">قيد الانتظار</SelectItem>
-                          <SelectItem value="confirmed" className="text-xs">تأكيد</SelectItem>
-                          <SelectItem value="cancelled" className="text-xs text-destructive">إلغاء</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDelete(booking.id)}
-                        className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+            {bookings.map((booking) => {
+              const bookingDate = formatBookingDate(booking.createdAt);
+              const displayName = booking.guestName || booking.userName || 'ضيف';
+              const displayEmail = booking.guestEmail || booking.userEmail || '-';
+              const displayPrice = booking.price || booking.roomPrice || 0;
+
+              return (
+                <TableRow 
+                  key={booking.id}
+                  className="group cursor-pointer"
+                  onClick={() => openBookingDetailsSwal(booking)}
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-muted border border-border overflow-hidden">
+                        <img 
+                          src={`https://api.dicebear.com/7.x/initials/svg?seed=${displayName}`} 
+                          alt="User"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-text-main text-sm">
+                          {displayName}
+                        </span>
+                        <span className="text-[10px] text-text-muted font-medium">#{booking.id?.substring(0, 8)}</span>
+                      </div>
                     </div>
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  <TableCell>
+                    <span className="text-[10px] font-bold text-text-muted select-all">
+                      {displayEmail}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-bold text-text-main text-xs">{booking.hotelName || booking.hotelId}</span>
+                      <span className="text-[10px] text-text-muted font-medium">{booking.roomTitle || booking.roomId}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-black text-success text-sm">${displayPrice}</span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-xs text-text-main">
+                        {bookingDate.date}
+                      </span>
+                      <span className="text-[9px] text-text-muted font-medium">
+                        {bookingDate.time}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                  {!isDashboard && (
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-start gap-2">
+                        <Select 
+                          onValueChange={(v) => updateStatus(booking.id, v)} 
+                          defaultValue={booking.status}
+                        >
+                          <SelectTrigger className="w-[120px] h-8 text-[10px] font-bold rounded-lg bg-card">
+                            <SelectValue placeholder="الحالة" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending" className="text-xs">قيد الانتظار</SelectItem>
+                            <SelectItem value="confirmed" className="text-xs">تأكيد</SelectItem>
+                            <SelectItem value="cancelled" className="text-xs text-destructive">إلغاء</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDelete(booking.id)}
+                          className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

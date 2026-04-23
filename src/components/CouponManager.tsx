@@ -308,7 +308,7 @@ export const CouponManager: React.FC = () => {
                 <TableHead>القيمة</TableHead>
                 <TableHead>الصلاحية</TableHead>
                 <TableHead>تحكم الحالة</TableHead>
-                <TableHead className="text-left">الإجراءات</TableHead>
+                <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -351,8 +351,8 @@ export const CouponManager: React.FC = () => {
                       )}
                     </button>
                   </TableCell>
-                  <TableCell className="text-left">
-                    <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-start gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
                       <Button
                         variant="outline"
                         size="icon"

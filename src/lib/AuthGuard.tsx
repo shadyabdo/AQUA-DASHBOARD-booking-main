@@ -67,7 +67,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   }
 
   // Check if admin (based on the rules provided by user)
-  const allowedAdmins = ["shadyabdowd2020@gmail.com", "otdragoze@gmail.com", "gidehotel@gmail.com"];
+  const allowedAdmins = ["shadyabdowd2020@gmail.com", "otdragoze@gmail.com", "gidehotel@gmail.com", "abdo20004044@gmail.com"];
   const isAdmin = user.email && allowedAdmins.includes(user.email);
 
   if (!isAdmin) {

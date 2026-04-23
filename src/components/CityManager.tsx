@@ -290,7 +290,7 @@ export const CityManager: React.FC = () => {
                 <TableHead className="w-[45%]">الوجهة والتصنيف</TableHead>
                 <TableHead>معاينة بصرية</TableHead>
                 <TableHead>الظهور المميز</TableHead>
-                <TableHead className="text-left">مركز التحكم</TableHead>
+                <TableHead className="text-right">مركز التحكم</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -325,8 +325,8 @@ export const CityManager: React.FC = () => {
                   <TableCell>
                     <Switch checked={city.isFeatured} onCheckedChange={() => toggleFeatured(city)} className="data-[state=checked]:bg-warning" />
                   </TableCell>
-                  <TableCell className="text-left">
-                    <div className="flex items-center justify-end gap-2">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-start gap-2">
                       <Button 
                         variant="outline" 
                         size="icon" 

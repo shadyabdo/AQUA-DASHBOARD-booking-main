@@ -332,7 +332,7 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ overrideCityId, overri
                 <TableHead>الاستحقاق الليلة</TableHead>
                 <TableHead>الألبوم البصري</TableHead>
                 <TableHead>مواصفات الوحدة</TableHead>
-                <TableHead className="text-left">التحكم</TableHead>
+                <TableHead className="text-right">التحكم</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -399,8 +399,8 @@ export const RoomManager: React.FC<RoomManagerProps> = ({ overrideCityId, overri
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-left">
-                    <div className="flex items-center justify-end gap-3 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-start gap-3 scale-90 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300">
                       <Button 
                         variant="ghost" 
                         size="icon" 

@@ -32,36 +32,12 @@ interface HotelManagerProps {
 export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onManageRooms }) => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    cityId: overrideCityId || '',
-    imageUrls: [''],
-    المرافق: [''],
-    الإطلالة: '',
-    freeCancellation: false,
-    rating: 0,
-    reviewsCount: 0,
-    mapUrl: ''
-  });
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    description: '',
-    cityId: '',
-    imageUrls: [''],
-    المرافق: [''],
-    الإطلالة: '',
-    freeCancellation: false
-  });
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [viewerImages, setViewerImages] = useState<string[]>([]);
   const [viewerIndex, setViewerIndex] = useState(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [viewerZoom, setViewerZoom] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -115,147 +91,67 @@ export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onMa
     loadData();
   }, [overrideCityId]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    const uploadPromises = Array.from(files).map(async (file: File) => {
-      const storageRef = ref(storage, `hotels/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      return getDownloadURL(storageRef);
-    });
-
-    try {
-      const urls = await Promise.all(uploadPromises);
-      setUploadedImages(prev => [...prev, ...urls]);
-      toast.success(`تم رفع ${urls.length} صور`);
-    } catch (error) {
-      console.error(error);
-      toast.error('فشل في رفع الصور');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const addImageUrlField = (isEdit: boolean = false) => {
-    if (isEdit) {
-      setEditFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ''] }));
-    } else {
-      setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, ''] }));
-    }
-  };
-
-  const removeImageUrlField = (index: number, isEdit: boolean = false) => {
-    if (isEdit) {
-      setEditFormData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_, i) => i !== index) }));
-    } else {
-      setFormData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_, i) => i !== index) }));
-    }
-  };
-
-  const updateImageUrlField = (index: number, value: string, isEdit: boolean = false) => {
-    if (isEdit) {
-      const newUrls = [...editFormData.imageUrls];
-      newUrls[index] = value;
-      setEditFormData(prev => ({ ...prev, imageUrls: newUrls }));
-    } else {
-      const newUrls = [...formData.imageUrls];
-      newUrls[index] = value;
-      setFormData(prev => ({ ...prev, imageUrls: newUrls }));
-    }
-  };
-
-  const addDynamicField = (field: 'المرافق', isEdit: boolean = false) => {
-    if (isEdit) {
-      setEditFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: [...prev[field], ''] }));
-    }
-  };
-
-  const removeDynamicField = (field: 'المرافق', index: number, isEdit: boolean = false) => {
-    if (isEdit) {
-      setEditFormData(prev => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: prev[field].filter((_, i) => i !== index) }));
-    }
-  };
-
-  const updateDynamicField = (field: 'المرافق', index: number, value: string, isEdit: boolean = false) => {
-    if (isEdit) {
-      const newValues = [...editFormData[field]];
-      newValues[index] = value;
-      setEditFormData(prev => ({ ...prev, [field]: newValues }));
-    } else {
-      const newValues = [...formData[field]];
-      newValues[index] = value;
-      setFormData(prev => ({ ...prev, [field]: newValues }));
-    }
-  };
-
-  const handleAddHotel = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.cityId) {
-      toast.error('يرجى ملء الحقول المطلوبة');
-      return;
-    }
-    setLoading(true);
-    try {
-      let mapUrl = formData.mapUrl;
-      if (mapUrl.includes('<iframe')) {
-        const match = mapUrl.match(/src="([^"]+)"/);
-        if (match && match[1]) {
-          mapUrl = match[1];
-        }
+  const openAddHotelSwal = () => {
+    MySwal.fire({
+      html: (
+        <div className="p-8">
+          <div className="flex flex-col items-center gap-2 mb-8 text-center">
+            <div className="stat-icon-glow bg-primary/10 text-primary mb-0 scale-90">
+              <HotelIcon className="h-6 w-6" />
+            </div>
+            <div className="space-y-0.5">
+              <h2 className="text-2xl font-black tracking-tight text-text-main">تسجيل منشأة فندقية</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">نظام إدارة الأصول الموحد</p>
+            </div>
+          </div>
+          <HotelForm 
+            cities={cities} 
+            initialData={{ cityId: overrideCityId }}
+            onSubmit={async (data) => {
+              if (!data.name || !data.cityId) {
+                toast.error('يرجى ملء الحقول المطلوبة');
+                return;
+              }
+              setLoading(true);
+              try {
+                await addDoc(collection(db, 'cities', data.cityId, 'hotels'), data);
+                toast.success('تم إضافة الفندق بنجاح ✓');
+                MySwal.close();
+                
+                if (overrideCityId) {
+                  const hSnap = await firestoreGetDocs(collection(db, 'cities', overrideCityId, 'hotels'));
+                  const list = hSnap.docs.map(doc => ({ id: doc.id, cityId: overrideCityId, ...doc.data() } as Hotel));
+                  setHotels(list.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+                } else {
+                  const cgSnap = await firestoreGetDocs(query(collectionGroup(db, 'hotels')));
+                  const list = cgSnap.docs.map(doc => {
+                    const data = doc.data();
+                    const parts = doc.ref.path.split('/');
+                    const cityId = parts.length >= 4 ? parts[parts.length - 3] : (data.cityId || '');
+                    return { id: doc.id, cityId, ...data } as Hotel;
+                  });
+                  setHotels(list.sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+                }
+              } catch (error) {
+                console.error(error);
+                toast.error('فشل في إضافة الفندق');
+              } finally {
+                setLoading(false);
+              }
+            }} 
+            onCancel={() => MySwal.close()} 
+          />
+        </div>
+      ),
+      showConfirmButton: false,
+      width: '70vw',
+      background: 'var(--card)',
+      padding: 0,
+      didOpen: (popup) => applyRTL(popup),
+      customClass: {
+        popup: 'rounded-[2.5rem] bg-card/95 backdrop-blur-2xl border-none shadow-[0_0_100px_rgba(0,0,0,0.3)] overflow-hidden',
       }
-
-      const allImages = [
-        ...uploadedImages,
-        ...formData.imageUrls.filter(url => url.trim() !== '')
-      ];
-      
-      const hotelData = {
-        name: formData.name,
-        description: formData.description,
-        cityId: formData.cityId,
-        images: allImages,
-        Hotel_img: allImages, // backward compat
-        amenities: formData.المرافق.filter(f => f.trim() !== ''),
-        المرافق: formData.المرافق.filter(f => f.trim() !== ''), // backward compat
-        الإطلالة: formData.الإطلالة,
-        freeCancellation: formData.freeCancellation,
-        rating: formData.rating,
-        reviewsCount: formData.reviewsCount,
-        mapUrl: mapUrl || ''
-      };
-
-      await addDoc(collection(db, 'cities', formData.cityId, 'hotels'), hotelData);
-
-      setFormData({ 
-        name: '', 
-        description: '',
-        cityId: overrideCityId || '', 
-        imageUrls: [''],
-        المرافق: [''],
-        الإطلالة: '',
-        freeCancellation: false,
-        rating: 0,
-        reviewsCount: 0,
-        mapUrl: ''
-      });
-      setUploadedImages([]);
-      toast.success('تم إضافة الفندق بنجاح');
-    } catch (error) {
-      console.error(error);
-      toast.error('فشل في إضافة الفندق');
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleDeleteHotel = async (hotel: Hotel) => {
@@ -370,254 +266,31 @@ export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onMa
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-text-main tracking-tight">إدارة الفنادق</h1>
-        <p className="text-sm text-text-muted">إدارة المنشآت الفندقية والمنتجعات في مختلف المدن.</p>
+    <div className="space-y-10 focus-visible:outline-none">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-black text-text-main tracking-tight gradient-text">إدارة الفنادق</h1>
+          <p className="text-sm text-text-muted font-bold">إدارة المنشآت الفندقية والمنتجعات في مختلف المدن.</p>
+        </div>
+
+        <Button onClick={openAddHotelSwal} className="btn-premium h-14 px-8 rounded-2xl gap-3 shadow-xl shadow-primary/20">
+          <Plus className="h-5 w-5" />
+          <span className="font-black text-xs uppercase tracking-widest">إضافة فندق جديد</span>
+        </Button>
       </div>
 
-      <Card className="premium-card">
-        <CardHeader className="px-6 py-4 border-b border-border">
-          <CardTitle className="flex items-center gap-2 text-lg font-bold">
-            <HotelIcon className="h-5 w-5 text-primary" />
-            إضافة فندق جديد
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <form onSubmit={handleAddHotel} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-text-muted">اسم الفندق</Label>
-              <Input 
-                placeholder="اسم الفندق" 
-                value={formData.name} 
-                onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                className="premium-input"
-              />
+      <div className="premium-card bg-card overflow-hidden">
+        <div className="px-10 py-8 border-b border-border/40 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 bg-muted/10">
+          <div className="flex items-center gap-4">
+            <div className="stat-icon-glow bg-primary/10 text-primary mb-0 scale-75">
+              <HotelIcon className="h-7 w-7" />
             </div>
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-text-muted">وصف الفندق</Label>
-              <Input 
-                placeholder="وصف مختصر للفندق..." 
-                value={formData.description} 
-                onChange={(e) => setFormData({...formData, description: e.target.value})} 
-                className="premium-input"
-              />
-            </div>
-            {!overrideCityId && (
-              <div className="space-y-2">
-                <Label className="text-xs font-bold text-text-muted">المدينة</Label>
-                <Select onValueChange={(v) => setFormData({...formData, cityId: v})} value={formData.cityId}>
-                  <SelectTrigger className="premium-input">
-                    <SelectValue placeholder="اختر مدينة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities.map(city => (
-                      <SelectItem key={city.id} value={city.id}>
-                        {city.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="md:col-span-2 space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* المرافق */}
-                <div className="space-y-4">
-                  <Label className="text-xs font-bold text-text-muted">المرافق</Label>
-                  <div className="space-y-2">
-                    {formData.المرافق.map((item, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input 
-                          placeholder="مرفق" 
-                          value={item} 
-                          onChange={(e) => updateDynamicField('المرافق', index, e.target.value)} 
-                          className="premium-input h-10"
-                        />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeDynamicField('المرافق', index)} className="h-10 w-10 text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" onClick={() => addDynamicField('المرافق')} className="w-full h-10 border-dashed text-xs font-bold">
-                      <Plus className="h-4 w-4 mr-2" /> إضافة مرفق
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-xs font-bold text-text-muted">الإطلالة</Label>
-                  <Input 
-                    placeholder="إطلالة الفندق" 
-                    value={formData.الإطلالة} 
-                    onChange={(e) => setFormData({...formData, الإطلالة: e.target.value})} 
-                    className="premium-input"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-xs font-bold text-text-muted">التقييم (1-5)</Label>
-                  <Input 
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    placeholder="التقييم" 
-                    value={formData.rating} 
-                    onChange={(e) => setFormData({...formData, rating: parseFloat(e.target.value) || 0})} 
-                    className="premium-input"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <Label className="text-xs font-bold text-text-muted">عدد التقييمات</Label>
-                  <Input 
-                    type="number"
-                    placeholder="عدد المراجعات" 
-                    value={formData.reviewsCount} 
-                    onChange={(e) => setFormData({...formData, reviewsCount: Number(e.target.value)})} 
-                    className="premium-input"
-                  />
-                </div>
-
-                <div className="space-y-4 md:col-span-2">
-                  <Label className="text-xs font-bold text-text-muted flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5" />
-                    رابط الموقع على Google Maps
-                  </Label>
-                  <div className="relative">
-                    <MapPin className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-                    <Input 
-                      placeholder="https://maps.google.com/..."
-                      value={formData.mapUrl}
-                      onChange={(e) => {
-                        let val = e.target.value;
-                        if (val.includes('<iframe')) {
-                          const match = val.match(/src="([^"]+)"/);
-                          if (match && match[1]) {
-                            val = match[1];
-                          }
-                        }
-                        setFormData({...formData, mapUrl: val});
-                      }}
-                      className="premium-input pr-10"
-                      dir="ltr"
-                    />
-                  </div>
-                  {formData.mapUrl && (
-                    <a
-                      href={formData.mapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[10px] font-bold text-primary hover:underline"
-                    >
-                      <MapPin className="h-3 w-3" /> معاينة الموقع على الخريطة
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between bg-muted p-4 rounded-lg border border-border">
-                <div className="flex items-center gap-3">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <div className="space-y-0.5">
-                    <h4 className="text-sm font-bold text-text-main">سياسة الإلغاء المرنة</h4>
-                    <p className="text-[10px] text-text-muted font-medium">تفعيل إمكانية استرداد الأموال للعملاء.</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch 
-                    id="free-cancel" 
-                    checked={formData.freeCancellation} 
-                    onCheckedChange={(c) => setFormData({...formData, freeCancellation: c})} 
-                  />
-                  <Label htmlFor="free-cancel" className="text-xs font-bold text-text-muted cursor-pointer">إلغاء مجاني</Label>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-xs font-bold text-text-muted">روابط الصور</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {formData.imageUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <Input 
-                        placeholder="رابط الصورة..." 
-                        value={url} 
-                        onChange={(e) => updateImageUrlField(index, e.target.value)} 
-                        className="premium-input pr-10"
-                      />
-                      {formData.imageUrls.length > 1 && (
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => removeImageUrlField(index)}
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => addImageUrlField()}
-                    className="w-full h-11 border-dashed text-xs font-bold"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> إضافة رابط صورة
-                  </Button>
-              </div>
-
-              <div className="space-y-4">
-                <Label className="text-xs font-bold text-text-muted">رفع الصور</Label>
-                <div className="flex flex-wrap gap-4 bg-muted/50 p-4 rounded-lg border border-border/50">
-                  <AnimatePresence>
-                    {uploadedImages.map((url, index) => (
-                      <motion.div 
-                        key={url} 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group"
-                      >
-                        <img src={url} alt="Hotel" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        <button 
-                          type="button"
-                          onClick={() => removeImage(index)}
-                          className="absolute inset-0 bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted transition-all">
-                    <ImageIcon className="h-6 w-6 text-text-muted mb-1" />
-                    <span className="text-[10px] font-bold text-text-muted">رفع صورة</span>
-                    <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} disabled={uploading} />
-                  </label>
-                </div>
-                {uploading && <p className="text-[10px] text-primary font-bold animate-pulse">جاري الرفع...</p>}
-              </div>
-              <Button type="submit" className="btn-premium w-full h-12 rounded-lg" disabled={loading || uploading}>
-                {loading ? 'جاري الحفظ...' : 'إضافة الفندق'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="premium-card overflow-hidden">
-        <div className="px-6 py-4 border-b border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-muted/30">
-          <div className="flex items-center gap-2">
-            <HotelIcon className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-bold text-text-main">
+            <h2 className="text-xl font-black tracking-tight text-text-main">
               سجل الفنادق 
               {hotels.length > 0 && <span className="mr-2 text-xs text-primary/60 font-medium">({hotels.length})</span>}
             </h2>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-3 w-full lg:w-auto">
             <Button 
               variant="outline" 
               size="sm" 
@@ -625,28 +298,28 @@ export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onMa
                 setLoading(true);
                 // Trigger the logic in useEffect by just resetting loading
               }}
-              className="h-9 px-3 rounded-lg text-[10px] font-bold gap-2"
+              className="h-14 px-6 rounded-2xl text-[10px] font-black gap-2 border-border/40 bg-card hover:bg-muted"
               disabled={loading}
             >
-              <Sparkles className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+              <Sparkles className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               تحديث البيانات
             </Button>
             {loading && (
-              <div className="flex items-center gap-2 text-[10px] font-bold text-primary bg-primary/5 px-3 py-1 rounded-full animate-pulse">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-primary bg-primary/5 px-4 h-14 rounded-2xl animate-pulse">
                 جاري المزامنة...
               </div>
             )}
-            <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-            <Input 
-              placeholder="البحث..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 h-10 text-sm font-bold bg-card"
-            />
+            <div className="relative w-full sm:w-72 group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-text-muted group-focus-within:text-primary transition-colors" />
+              <Input 
+                placeholder="البحث..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-14 h-14 text-sm font-black rounded-2xl bg-card border-border/40 focus:ring-primary/10 transition-all shadow-inner"
+              />
+            </div>
           </div>
         </div>
-      </div>
         <div className="overflow-x-auto">
           <Table className="table-premium">
             <TableHeader>
@@ -739,7 +412,7 @@ export const HotelManager: React.FC<HotelManagerProps> = ({ overrideCityId, onMa
             </TableBody>
           </Table>
         </div>
-      </Card>
+      </div>
 
       <Dialog open={isViewerOpen} onOpenChange={setIsViewerOpen}>
         <DialogContent showCloseButton={false} className="w-[500px] max-w-[500px] h-[85vh] p-0 border-none bg-black/95 backdrop-blur-2xl rounded-[2.5rem] flex flex-col items-center justify-center overflow-hidden">

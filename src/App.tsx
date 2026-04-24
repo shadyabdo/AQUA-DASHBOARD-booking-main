@@ -1083,7 +1083,7 @@ export default function App() {
                             <ZapIcon className="h-9 w-9 text-warning" />
                           </div>
                           <h3 className="font-black text-3xl tracking-tight leading-tight">التحكم المركزي الذكي</h3>
-                          <p className="text-sm text-white/70 font-bold leading-loose">قم بإدارة أصولك العقارية بذكاء اصطناعي ونزاهة بيانات كاملة بنسبة 100%.</p>
+                          <p className="text-sm text-white/70 font-bold leading-loose">قم بإدارة أصولك العقارية بذكاء وإحترافية وبيانات آمنة 100%.</p>
                         </div>
                         
                         <div className="grid grid-cols-1 gap-5">
